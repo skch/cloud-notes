@@ -86,7 +86,7 @@ namespace Attila
         var res = new List<DataDocument>();
         try
         {
-          var list = aws.SelectItems(DatabaseName);
+          var list = aws.SelectItemNames(DatabaseName, null);
           foreach (Item citem in list)
           {
             var item = new DataDocument(this, citem.Name);
@@ -346,9 +346,6 @@ namespace Attila
 
       internal void saveItemToS3(DataItem item)
       {
-        // Debug
-        //string lfname = String.Format(@"H:\Code\Nielsen\C#\PoC Cloud Storage\CloudStorageBrowser\Data\{0}.txt", fname);
-        //File.WriteAllText(lfname, data);
         try
         {
           if (!item.IsAttachment)
@@ -574,8 +571,9 @@ namespace Attila
         if (!createRootDocument(dname)) return false;
         if (!validateOrCreateS3Bucket(dname)) return false;
         if (!createS3Folders(dname)) return false;
-        Thread.Sleep(2000); // It takes time to update values
+        if (!openFlag) return true;
 
+        Thread.Sleep(2000); // It takes time to update values
         return Open(dname);
       }
 
@@ -603,7 +601,7 @@ namespace Attila
       /// <returns></returns>
       public IEnumerable<string> GetAllDocuments()
       {
-        var list = aws.SelectItems(DatabaseName);
+        var list = aws.SelectItemNames(DatabaseName, null);
         foreach (Item citem in list)
         {
           if (citem.Name != "@root")
@@ -611,6 +609,27 @@ namespace Attila
         }
 
       }
+
+      /// <summary>
+      /// Given selection criteria for a document, returns all documents in a database that meet the criteria.
+      /// </summary>
+      /// <param name="formula"></param>
+      /// <param name="maxdocs"></param>
+      public IEnumerable<DataDocument> Search(string formula, int maxdocs = 0)
+      {
+        var list = aws.SelectItems(DatabaseName, formula, maxdocs);
+        foreach (Item citem in list)
+        {
+          if (citem.Name != "@root")
+          {
+            var doc = new DataDocument(this, citem.Name);
+            doc.replaceAllItems(citem.Attributes);
+            yield return doc;
+          }
+        }
+
+      }
+
 
       public DataDocument this[string name]
       {
@@ -691,15 +710,6 @@ namespace Attila
       {
       }
 
-      /// <summary>
-      /// Given selection criteria for a document, returns all documents in a database that meet the criteria.
-      /// </summary>
-      /// <param name="formula"></param>
-      /// <param name="maxdocs"></param>
-      public void Search(string formula, int maxdocs = 0)
-      {
-
-      }
       #endregion
 
       #endregion

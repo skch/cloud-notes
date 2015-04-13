@@ -214,17 +214,17 @@ namespace Attila
 
     public DataItem CreateItemFromJsonFile(string name, string fname)
     {
-      JObject jdoc = null;
+      object jdoc = null;
       using (StreamReader reader = File.OpenText(fname))
       {
-        jdoc = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+        jdoc = JsonConvert.DeserializeObject(reader.ReadToEnd());
       }
       return AppendItemValue(name, jdoc);
     }
 
     public DataItem CreateItemFromJson(string name, string jtext)
     {
-      JObject jdoc = JObject.Parse(jtext);
+      var jdoc = JsonConvert.DeserializeObject(jtext);
       return AppendItemValue(name, jdoc);
     }
 

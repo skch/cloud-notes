@@ -48,6 +48,8 @@ namespace Attila.Files
     #region Aws SimpleDb
     private IAmazonSimpleDB simpleDb = null;
 
+    #region Domains
+
     //-------------------------------------------------------------------------------------------
     public List<string> GetListDomains()
     {
@@ -65,6 +67,10 @@ namespace Attila.Files
     {
       simpleDb.DeleteDomain(new DeleteDomainRequest() { DomainName = dname });
     }
+
+    #endregion
+
+    #region Loadn and Save attributes
 
     //-------------------------------------------------------------------------------------------
     internal List<Amazon.SimpleDB.Model.Attribute> LoadItemAttributes(string dname, string iname)
@@ -91,12 +97,37 @@ namespace Attila.Files
       });
     }
 
+    #endregion
+
+    #region Select items
+
     //-------------------------------------------------------------------------------------------
-    public List<Amazon.SimpleDB.Model.Item> SelectItems(string dname)
+    public List<Amazon.SimpleDB.Model.Item> SelectItemNames(string dname, string where, int limit = 0)
     {
-      SelectResponse response = simpleDb.Select(new SelectRequest() { SelectExpression = "Select * from `" + dname + "`" });
+      string query = "Select itemName() from `" + dname + "`";
+
+      // This is dangerous, need to replace with safe query
+      if (!String.IsNullOrEmpty(where)) query += " where " + where;
+      if (limit > 0) query += String.Format(" limit {0}", limit);
+      SelectResponse response = simpleDb.Select(new SelectRequest() { SelectExpression = query });
       return response.Items;
     }
+
+    //-------------------------------------------------------------------------------------------
+    public List<Amazon.SimpleDB.Model.Item> SelectItems(string dname, string where, int limit = 0)
+    {
+      string query = "Select * from `" + dname + "`";
+
+      // This is dangerous, need to replace with safe query
+      if (!String.IsNullOrEmpty(where)) query += " where " + where;
+      if (limit > 0) query += String.Format(" limit {0}", limit);
+      SelectResponse response = simpleDb.Select(new SelectRequest() { SelectExpression = query });
+      return response.Items;
+    }
+
+    #endregion
+
+    #region Delete items and attributes
 
     public void DeleteSdbItem(string dname, string iname)
     {
@@ -117,6 +148,8 @@ namespace Attila.Files
       }
       simpleDb.BatchDeleteAttributes(deleteRequest);
     }
+
+    #endregion
 
     #endregion
 

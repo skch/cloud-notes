@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace Attila
   public class DataItem
   {
 
-    private const int MAX_LENGTH = 1000; // Values larger than that will be stored in S3
+    private const int MAX_LENGTH = 1024; // Values larger than that will be stored in S3
 
     internal DataItem(DataDocument parent, string name)
     {
@@ -34,7 +35,7 @@ namespace Attila
     // Path to the S3 object that contains item data
     internal string internalPath
     {
-      get { return "data/" + Name; }
+      get { return "data/" + Name + "/"+document.Name; }
     }
 
     internal void loadValue()
@@ -61,7 +62,7 @@ namespace Attila
     {
       mimeType = "";
       if (internalValue is XElement) { mimeType = "application/xml"; return; }
-      if (internalValue is JObject) { mimeType = "application/json"; return; }
+      if (internalValue is JObject || internalValue is JArray) { mimeType = "application/json"; return; }
       if (internalValue is string)
       {
         if ((internalValue as string).Length >= MAX_LENGTH) mimeType = "text/plain";
@@ -93,7 +94,7 @@ namespace Attila
         if (internalValue is double) return String.Format(prefixForma, typeDouble, internalValue);
 
         if (internalValue is XElement) return String.Format(prefixForma, typeXml, internalPath);
-        if (internalValue is JObject) return String.Format(prefixForma, typeJson, internalPath);
+        if (internalValue is JObject || internalValue is JArray) return String.Format(prefixForma, typeJson, internalPath);
         if (internalValue is string)
         {
           if ((internalValue as string).Length < MAX_LENGTH) return internalValue; else return String.Format(prefixForma, typeText, internalPath);
@@ -150,7 +151,7 @@ namespace Attila
         switch (mimeType)
         {
           case "application/xml": internalValue = XElement.Parse(value); break;
-          case "application/json": internalValue = JObject.Parse(value); break;
+          case "application/json": internalValue = JsonConvert.DeserializeObject(value); break;
           default: internalValue = value; break;
         }
       }
@@ -160,6 +161,10 @@ namespace Attila
     #region Public Interface
     // ============================================================================================
 
+    public bool IsEmpty
+    {
+      get { return (internalValue == null); }
+    }
     
     private bool isLoaded = false;
     /// <summary>
@@ -279,7 +284,22 @@ namespace Attila
     /// <summary>
     /// Read-only. The data type of an item.
     /// </summary>
-    public string ItemType { get { return ""; } }
+    public string ItemType { 
+      get {
+        if (!String.IsNullOrEmpty(mimeType)) return mimeType;
+        if (internalValue == null) return MimeType;
+        if (internalValue is DateTime) return "DateTime";
+        if (internalValue is Int32) return "Int";
+        if (internalValue is decimal) return "Decimal";
+        if (internalValue is double) return "Double";
+
+        if (internalValue is XElement) return "text/xml";
+        if (internalValue is JObject || internalValue is JArray) return "text/json";
+        if (internalValue is string) return "text";
+        return "Unknown";
+ 
+      } 
+    }
 
     /// <summary>
     /// Read-only. The size of an item's value in bytes.
