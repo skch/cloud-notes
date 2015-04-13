@@ -13,6 +13,9 @@ using System.Threading;
 
 namespace Attila
 {
+
+    public enum AccessLevel { NoAccess, Depositor, Reader, Author, Editor, Designer, Manager }
+
     public class CloudDatabase: IDisposable
     {
       #region Private properties
@@ -77,6 +80,7 @@ namespace Attila
 
       }
 
+      // Need clarification
       public List<DataDocument> LoadData()
       {
         var res = new List<DataDocument>();
@@ -379,7 +383,11 @@ namespace Attila
       #region Properties
 
       public string DatabaseName = "";
-      public List<DataDocument> listDocuments = new List<DataDocument>();
+
+      /// <summary>
+      /// Read-only. All the documents in a database.
+      /// </summary>
+      public List<DataDocument> AllDocuments = new List<DataDocument>();
 
       private static Logger logger = LogManager.GetCurrentClassLogger();
       internal Logger Log {
@@ -398,6 +406,66 @@ namespace Attila
       {
         get { return isOpen; }
       }
+
+      /// <summary>
+      /// Read-only. The access control list for a database.
+      /// </summary>
+      public string ACL {
+        get { return ""; } 
+      }
+
+      /// <summary>
+      /// Read-only. The date a database was created.
+      /// </summary>
+      public DateTime Created {
+        get { return DateTime.Now; } 
+      }
+
+      /// <summary>
+      /// Read-only. The current user's access level to a database.
+      /// </summary>
+      public AccessLevel CurrentAccessLevel {
+        get { return AccessLevel.Manager; } 
+      }
+
+      /// <summary>
+      /// Read-write. Indicates whether updates to a server are delayed (batched) for better performance.
+      /// </summary>
+      public bool DelayUpdates { get; set; }
+      public DateTime LastModified {
+        get { return DateTime.Now; }  
+      }
+
+      /// <summary>
+      /// Read-only. People, servers, and groups that have Manager access to a database.
+      /// </summary>
+      public ICollection<string> Managers {
+        get { return new List<string>();  }  
+      }
+
+      /// <summary>
+      /// Read-only. The percent of a database's total size that is occupied by real data (versus empty space).
+      /// </summary>
+      public double PercentUsed {
+        get { return 100; }  
+      }
+
+      /// <summary>
+      /// Read-only. The size of a database, in bytes.
+      /// </summary>
+      public double Size {
+        get { return -1; } 
+      }
+
+      /// <summary>
+      /// Read-write. The size quota of a database, in bytes.
+      /// </summary>
+      public long SizeQuota { get; set; }
+
+      /// <summary>
+      /// Read-Write. The title of a database.
+      /// </summary>
+      public string Title { get; set; }
 
 
       #endregion
@@ -460,6 +528,11 @@ namespace Attila
       #endregion
 
       #region Open Database
+      /// <summary>
+      /// Opens a database. A database must be open in order for a script to access its properties and methods.
+      /// </summary>
+      /// <param name="domain"></param>
+      /// <returns></returns>
       public bool Open(string domain)
       {
         if (String.IsNullOrEmpty(domain)) { Log.Error("Empty database name"); return false; }
@@ -472,6 +545,10 @@ namespace Attila
         return true;
       }
 
+      /// <summary>
+      /// Opensa database. The database name is specified in the 'aws_domain' configuration parameter
+      /// </summary>
+      /// <returns></returns>
       public bool Open()
       {
         return Open(ConfigurationManager.AppSettings["aws_domain"]);
@@ -480,7 +557,14 @@ namespace Attila
       #endregion
 
       #region Initialize Database
-      public bool Init(string dname)
+      /// <summary>
+      /// Creates a new database in the cloud, using the server and file name that you specify. 
+      /// Because the new database is not based on a template, it's blank and does not contain any forms or views.
+      /// </summary>
+      /// <param name="dname"></param>
+      /// <param name="openFlag">Indicates if you want to open the database. </param>
+      /// <returns></returns>
+      public bool Create(string dname, bool openFlag)
       {
         if (!validateDomainName(dname)) return false;
         if (!isConnected) Connect();
@@ -500,6 +584,12 @@ namespace Attila
 
       #region Data Operations
 
+      /// <summary>
+      /// Creates a document in a database and returns a DataDocument object that represents the new document. 
+      /// You must call Save if you want the new document to be saved to disk. 
+      /// </summary>
+      /// <param name="name"></param>
+      /// <returns></returns>
       public DataDocument CreateDocument(string name)
       {
         var res = new DataDocument(this, name);
@@ -507,6 +597,10 @@ namespace Attila
         //return getOrCreateDocument(name);
       }
 
+      /// <summary>
+      /// Get all the documents in a database.
+      /// </summary>
+      /// <returns></returns>
       public IEnumerable<string> GetAllDocuments()
       {
         var list = aws.SelectItems(DatabaseName);
@@ -531,10 +625,13 @@ namespace Attila
       public void DeleteDocument(string name)
       {
         var doc = getDocumentByName(name, false);
-        doc.Delete();
+        doc.Remove();
       }
 
-      public void DeleteDatabase()
+      /// <summary>
+      /// Permanently deletes a database from cloud.
+      /// </summary>
+      public void Remove()
       {
         deleteS3Bucket();
         deleteSdbDomain();
@@ -543,6 +640,66 @@ namespace Attila
       }
 
 
+      #endregion
+
+      #region Not implemented yet
+      /// <summary>
+      /// Creates an empty copy of the current database. The copy contains the design elements of the current database, an identical 
+      /// access control list, and an identical title. The copy does not contain any documents and is not a replica.
+      /// </summary>
+      /// <param name="newDbName"></param>
+      public void CreateCopy(string newDbName)
+      {
+      }
+
+      /// <summary>
+      /// Retrieves or creates a profile document.
+      /// </summary>
+      /// <param name="profileName"></param>
+      /// <param name="userName"></param>
+      public void GetProfileDocument(string profileName, string userName = "")
+      {
+
+      }
+
+      /// <summary>
+      /// Modifies a database access control list to provide the specified level of access to a person, group, or server.
+      /// </summary>
+      /// <param name="userName"></param>
+      /// <param name="level"></param>
+      public void GrantAccess(string userName, AccessLevel level)
+      {
+
+      }
+
+      /// <summary>
+      /// Returns a person's, group's, or server's current access level to a database.
+      /// </summary>
+      /// <param name="name"></param>
+      /// <returns></returns>
+      public AccessLevel QueryAccess(string name)
+      {
+        return AccessLevel.NoAccess;
+      }
+
+
+      /// <summary>
+      /// Removes a person, group, or server from a database access control list. This resets the access level for that person, group, or server to the Default setting for the database.
+      /// </summary>
+      /// <param name="userName"></param>
+      public void RevokeAccess(string userName)
+      {
+      }
+
+      /// <summary>
+      /// Given selection criteria for a document, returns all documents in a database that meet the criteria.
+      /// </summary>
+      /// <param name="formula"></param>
+      /// <param name="maxdocs"></param>
+      public void Search(string formula, int maxdocs = 0)
+      {
+
+      }
       #endregion
 
       #endregion

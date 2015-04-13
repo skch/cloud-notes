@@ -187,6 +187,9 @@ namespace Attila
       get { return mimeType; }
     }
 
+    /// <summary>
+    ///  Read-Write. Indicates if an item is encrypted.
+    /// </summary>
     private bool isEncrypted = false;
     public bool IsEncrypted
     {
@@ -195,13 +198,19 @@ namespace Attila
       // TODO: Implement item value encryption
     }
 
+    /// <summary>
+    /// Read-only. The name of an item.
+    /// </summary>
     private string valueName = "";
     public string Name
     {
       get { return valueName; }
     }
 
-    public dynamic Value
+    /// <summary>
+    /// Read-Write. The value(s) that an item holds.
+    /// </summary>
+    public dynamic Values
     {
       get {
         if (!isLoaded) loadValue();
@@ -217,11 +226,104 @@ namespace Attila
       }
     }
 
+    #region Not implemented yet
 
-    public void AddValue(string value)
+    /// <summary>
+    /// Read-Write. For a date-time item, returns a DateTime object representing the value of the item. 
+    /// For items of other types, returns null.
+    /// </summary>
+    public DateTime DateTimeValue { get { return DateTime.Now; } }
+
+    /// <summary>
+    /// Read-only. Indicates whether or not an item is of type Authors. 
+    /// An Authors item contains a list of user names, indicating people who have Author access to a particular document.
+    /// </summary>
+    public bool IsAuthors { get { return false; } }
+
+    /// <summary>
+    /// Read-only. Indicates if an item is a Names item. A Names item contains a list of user names.
+    /// </summary>
+    public bool IsNames { get { return false; } }
+
+    /// <summary>
+    /// Read-Write. Indicates if a user needs at least Editor access to modify an item.
+    /// </summary>
+    public bool IsProtected { get; set; }
+
+    /// <summary>
+    /// Read-Write. Indicates whether or not an item is of type Readers. 
+    /// A Readers item contains a list of user names, indicating people who have Reader access to a particular document.
+    /// </summary>
+    public string IsReaders { get; set; }
+
+    /// <summary>
+    /// Read-Write. Indicates if an item contains a signature.
+    /// </summary>
+    public string IsSigned { get; set; }
+
+    /// <summary>
+    /// Read-only. The date that an item was last modified. 
+    /// </summary>
+    public DateTime LastModified { get { return DateTime.Now; } }
+
+    /// <summary>
+    /// Read-only. The document that contains an item.
+    /// </summary>
+    public DataDocument Parent { get { return document;  } }
+
+    /// <summary>
+    /// Read-only. A plain text representation of an item's value.
+    /// </summary>
+    public string Text { get { return ""; } }
+
+    /// <summary>
+    /// Read-only. The data type of an item.
+    /// </summary>
+    public string ItemType { get { return ""; } }
+
+    /// <summary>
+    /// Read-only. The size of an item's value in bytes.
+    /// </summary>
+    public int ValueLength { get { return -1; } }
+
+
+
+    /// <summary>
+    /// For an item that's a text list, adds a new value to the item without erasing any existing values.
+    /// </summary>
+    /// <param name="value"></param>
+    public void AppendToTextList(string value)
     {
       // TODO: item - implement AddValue()
-    } 
+    }
+
+    /// <summary>
+    /// Given a value, checks if the value matches at least one of the item's values exactly.
+    /// </summary>
+    public bool Contains(dynamic value)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Copies an item to a specified document.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="newName"></param>
+    public void CopyItemToDocument(DataDocument document, string newName)
+    {
+    }
+
+    /// <summary>
+    /// Permanently deletes an item from a document.
+    /// </summary>
+    public void Remove()
+    {
+    }
+
+    #endregion
+
+
     #endregion
 
 
